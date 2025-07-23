@@ -1,0 +1,307 @@
+{
+  "name": "My workflow 2",
+  "nodes": [
+    {
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "hour": 9
+            }
+          ]
+        }
+      },
+      "id": "c9d95a95-44b4-4091-8269-170e7b851699",
+      "name": "Daily Trigger",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        160,
+        416
+      ],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "functionCode": "return [{ json: { asinList: ['ASIN1', 'ASIN2', 'ASIN3'] } }];"
+      },
+      "id": "13e72b94-24ca-4da6-bd64-553862952511",
+      "name": "Load ASIN List",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        384,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Simulate Amazon Scraper\nconst asins = items[0].json.asinList;\nlet results = [];\nfor (let asin of asins) {\n  results.push({ json: { asin, review: `Review for ${asin}`, rating: 2, date: new Date().toISOString() } });\n}\nreturn results;"
+      },
+      "id": "95c958c4-5953-4479-b3b5-9076967984e0",
+      "name": "Mock Amazon Scraper",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        608,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "let negativeCount = items.filter(item => item.json.sentiment === 'Negative').length;\n\nif (negativeCount >= 3) {\n  return [{\n    json: {\n      alert: true,\n      message: `🚨 Spike detected: ${negativeCount} negative reviews today`\n    }\n  }];\n}\n\nreturn [];"
+      },
+      "id": "c70d3f45-4d00-48aa-a6bc-7782f7014593",
+      "name": "Spike Detector",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1680,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "text": "{{$json[\"message\"]}}",
+        "otherOptions": {},
+        "attachments": []
+      },
+      "id": "df7ed320-ae83-4ec9-a17b-d66eba51ea08",
+      "name": "Send Slack Alert",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 1,
+      "position": [
+        1792,
+        -112
+      ],
+      "credentials": {
+        "slackApi": {
+          "id": "jMHyZgtqb8pCcZ7m",
+          "name": "Slack account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-3.5-turbo",
+          "mode": "list",
+          "cachedResultName": "GPT-3.5-TURBO"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "You are an AI that analyzes Amazon product reviews.\n\nAnalyze the following review and return a JSON object with:\n- \"sentiment\": one of Positive, Neutral, or Negative\n- \"issue\": a short summary of the main complaint or problem (if any). If no issue, return null.\n\nReview:\n\"{{$json.review}}\"\n\nRespond only with a valid JSON like:\n{\n  \"sentiment\": \"Negative\",\n  \"issue\": \"Stopped working after one week\"\n}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        832,
+        192
+      ],
+      "id": "b0e70662-3866-412c-9775-ab20da107308",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": "NcVPjDAHY7SWf516",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1XVOxRgPINmdtiyEAu3mQnVzn5ZPFQJhvGfUpjzElWTk",
+          "mode": "list",
+          "cachedResultName": "Sandan AI",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1XVOxRgPINmdtiyEAu3mQnVzn5ZPFQJhvGfUpjzElWTk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1XVOxRgPINmdtiyEAu3mQnVzn5ZPFQJhvGfUpjzElWTk/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        1456,
+        192
+      ],
+      "id": "fec0bf1f-6193-4581-a172-b07591209561",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YXnDgbuV9xm12XnQ",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        160,
+        192
+      ],
+      "id": "8a282933-b830-4b95-8adc-7d16be0cb60d",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const raw = $json.message.content;\nconst parsed = JSON.parse(raw);\n\nreturn {\n  json: {\n    asin: $json.asin,\n    review: $json.review,\n    rating: $json.rating,\n    date: $json.date,\n    sentiment: parsed.sentiment,\n    issue: parsed.issue\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1232,
+        192
+      ],
+      "id": "e442997e-50a1-450f-962b-a5b4deacd9a9",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "D093WJ8S5KM",
+          "mode": "id"
+        },
+        "text": "=🚨 *Alert:* {{$json[\"message\"]}}\nTriggered at: {{$now}}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        1856,
+        192
+      ],
+      "id": "06a35ae9-a1de-4a4d-b463-faa2762fcb1f",
+      "name": "Send a message",
+      "webhookId": "35533519-7c92-4d1c-8030-a5f0ac896e6b",
+      "credentials": {
+        "slackApi": {
+          "id": "jMHyZgtqb8pCcZ7m",
+          "name": "Slack account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Daily Trigger": {
+      "main": [
+        []
+      ]
+    },
+    "Load ASIN List": {
+      "main": [
+        [
+          {
+            "node": "Mock Amazon Scraper",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Spike Detector": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mock Amazon Scraper": {
+      "main": [
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Spike Detector",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Load ASIN List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "61ac725e-5a35-4c70-b226-fb8fabd09a61",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "0c969cce7bb15a5e7d8ef5f810a93063ecd3ea725e1aefbfa97f36e23c1e8601"
+  },
+  "id": "D9ujMVJ59lisGfBx",
+  "tags": []
+}
